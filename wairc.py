@@ -22,16 +22,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import serial
 import time
 import sys
 import os
 import re
+import select
 import argparse
 import rrdtool
 
-# GPIO value files (wiringPi)
-gpin = '/sys/class/gpio/gpio9/value'
+# GPIO pin to read from
+gpio_pin = 9
 
 # counter unit: 1 revolution = x m^3
 trigger_step = 0.001
@@ -78,6 +78,12 @@ def last_rrd_count():
   handle.close()
   return val
 
+
+# Setup gpio edge interrupt triggering
+def setup_gpio(pin):
+  os.system("gpio export {} in".format(pin))
+  os.system("gpio edge {} rising".format(pin))
+
 # Main
 def main():
   # Check command args
@@ -88,29 +94,29 @@ def main():
   if args.create:
     create_rrd()
 
-  trigger_state = 0
   counter = last_rrd_count()
   print "restoring counter to %f" % counter
 
-  while(1==1):
-    # read gpio input value file
-    f = open(gpin, 'r')
-    line = f.read().strip()
-    f.close()
+  # open gpio input value file
+  # and register handler for edge trigger
+  setup_gpio(gpio_pin)
+  f = open("/sys/class/gpio/gpio{}/value".format(gpio_pin), 'r')
+  epoll = select.epoll()
+  epoll.register(f, select.EPOLLIN | select.EPOLLET)
+  events = epoll.poll() # eat the first edge
 
-    old_state = trigger_state
-    if line == '1':
-      trigger_state = 1
-    elif line == '0':
-      trigger_state = 0
-    if old_state == 1 and trigger_state == 0:
-      # trigger active -> update count rrd
+  while(1==1):
+    events = epoll.poll()
+    f.seek(0)
+    value = f.read(1)
+    if value == '1':
+      # trigger edge detected -> update count rrd
       counter += trigger_step
       update = "N:%.3f:%.3f" % (counter, trigger_step)
       #print update
       rrdtool.update(count_rrd, update)
-    time.sleep(0.1)
 
+  f.close()
 
 if __name__ == '__main__':
   main()
