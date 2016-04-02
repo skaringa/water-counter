@@ -1,6 +1,7 @@
 #!/bin/sh
 rrdtool graph counter.gif \
   -s 'now -1 day' -e 'now' \
+  -w 800 -h 600 \
   -X 0 -A \
   DEF:counter=water.rrd:counter:LAST \
   VDEF:lastcount=counter,LAST \
@@ -9,6 +10,7 @@ rrdtool graph counter.gif \
 display counter.gif&
 rrdtool graph consum.gif \
   -s 'now -1 day' -e 'now' \
+  -w 800 -h 600 \
   DEF:consum=water.rrd:consum:AVERAGE \
   CDEF:consumltr=consum,60000,* \
   CDEF:conpd=consumltr,60,*,24,* \
