@@ -1,13 +1,13 @@
 #!/usr/bin/python -u
 #
-# emeir.py
+# wairc.py
 # 
-# Program to read the electrical meter using a reflective light sensor
+# Program to read the water counter using a reflective light sensor
 # This is the data recording part running on a Raspberry Pi.
-# It retrieves data from the Arduino over USB serial and stores
+# It retrieves data from the Arduino over serial and stores
 # counter and consumption values into a round robin database.
 
-# Copyright 2015 Martin Kompf
+# Copyright 2015-16 Martin Kompf
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,12 +26,12 @@ import time
 import sys
 import os
 import re
-import select
 import argparse
+import serial
 import rrdtool
 
-# GPIO pin to read from
-gpio_pin = 9
+# Serial port of arduino
+port = '/dev/ttyAMA0'
 
 # counter unit: 1 revolution = x m^3
 trigger_step = 0.001
@@ -78,12 +78,6 @@ def last_rrd_count():
   handle.close()
   return val
 
-
-# Setup gpio edge interrupt triggering
-def setup_gpio(pin):
-  os.system("gpio export {} in".format(pin))
-  os.system("gpio edge {} rising".format(pin))
-
 # Main
 def main():
   # Check command args
@@ -94,29 +88,32 @@ def main():
   if args.create:
     create_rrd()
 
+  # Open serial line
+  ser = serial.Serial(port, 9600)
+  if not ser.isOpen():
+    print "Unable to open serial port %s" % port
+    sys.exit(1)
+
+  trigger_state = 0
   counter = last_rrd_count()
   print "restoring counter to %f" % counter
 
-  # open gpio input value file
-  # and register handler for edge trigger
-  setup_gpio(gpio_pin)
-  f = open("/sys/class/gpio/gpio{}/value".format(gpio_pin), 'r')
-  epoll = select.epoll()
-  epoll.register(f, select.EPOLLIN | select.EPOLLET)
-  events = epoll.poll() # eat the first edge
-
   while(1==1):
-    events = epoll.poll()
-    f.seek(0)
-    value = f.read(1)
-    if value == '1':
-      # trigger edge detected -> update count rrd
+    # Read line from arduino and convert to trigger value
+    line = ser.readline()
+    line = line.strip()
+
+    old_state = trigger_state
+    if line == '1':
+      trigger_state = 1
+    elif line == '0':
+      trigger_state = 0
+    if old_state == 1 and trigger_state == 0:
+      # trigger active -> update count rrd
       counter += trigger_step
       update = "N:%.3f:%.3f" % (counter, trigger_step)
       #print update
       rrdtool.update(count_rrd, update)
-
-  f.close()
 
 if __name__ == '__main__':
   main()
