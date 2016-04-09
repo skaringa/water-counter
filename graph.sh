@@ -2,7 +2,7 @@
 rrdtool graph counter.gif \
   -s 'now -1 day' -e 'now' \
   -w 800 -h 600 \
-  -X 0 -A \
+  -A -Y \
   DEF:counter=water.rrd:counter:LAST \
   VDEF:lastcount=counter,LAST \
   "GPRINT:lastcount:%6.3lf m³" \
