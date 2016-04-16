@@ -1,7 +1,7 @@
-# emeir
-Monitor a water counter with Arduino and infrared light sensor.
+# water-counter
+Monitor a water meter with Arduino and infrared light sensor to capture counter value and consumption of water.
 
-![Water counter with infrared light barrier](https://www.kompf.de/tech/images/watir.jpg)
+![Water meter with infrared light barrier](https://www.kompf.de/tech/images/watir.jpg)
 
 
 The software consists of two parts:
