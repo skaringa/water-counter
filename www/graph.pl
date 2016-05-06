@@ -31,7 +31,7 @@ if ($size eq 'big') {
 die "invalid type\n" unless $type =~ /(count|consum)(day|week|month|year)/; 
 $ds=$1;
 $range=$2;
-$filename="/tmp/em${type}_${size}.png";
+$filename="/tmp/wai${type}_${size}.png";
 
 # create new image if existing file is older than rrd file
 my $maxdiff = 10;
