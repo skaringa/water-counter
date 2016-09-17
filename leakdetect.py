@@ -23,7 +23,7 @@ count_fetch = "{0}/water.fetch.txt".format(os.path.dirname(os.path.abspath(__fil
 min_pause = 3 * 60 * 60 # 3 hours
 
 # Verbose output
-verbose = True
+verbose = False
 
 # Read the rrd specified in count_rrd.
 # Returns array of (timestamp, counter).
