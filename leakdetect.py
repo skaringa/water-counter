@@ -62,7 +62,7 @@ def detect_pauses(data):
   for (ts, counter) in data:
     if counter > start_counter:
       duration = ts - start_time
-      if duration > min_pause:
+      if duration >= min_pause:
         result.append({'start' : start_time, 'duration' : duration})
       start_time = ts
       start_counter = counter
