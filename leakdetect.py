@@ -11,6 +11,7 @@ import os
 import csv
 import rrdtool as rrd
 from datetime import datetime
+import time
 from math import *
 
 # Path to RRD with counter values
@@ -58,7 +59,7 @@ def detect_pauses(data):
   result = []
   (start_time, start_counter) = data[0]
   (end_time, end_counter) = data[-1]
-  data.append((end_time + 1, end_counter + 1)) # ensure that counter increments
+  data.append((time.time(), end_counter + 1)) # ensure that counter increments
   for (ts, counter) in data:
     if counter > start_counter:
       duration = ts - start_time
