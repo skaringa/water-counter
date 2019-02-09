@@ -31,7 +31,8 @@ import serial
 import rrdtool
 
 # Serial port of arduino
-port = '/dev/ttyAMA0'
+#port = '/dev/ttyAMA0'
+port = '/dev/serial0'
 
 # counter unit: 1 revolution = x m^3
 trigger_step = 0.001
