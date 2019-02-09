@@ -5,7 +5,7 @@
 * and communicates with a master computer (Raspberry Pi)
 * over USB serial.
 
-* Copyright 2015 Martin Kompf
+* Copyright 2015-19 Martin Kompf
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,14 @@ const int ledOutPin = 12; // Signal LED output pin
 
 int sensorValueOff = 0;  // value read from the photo transistor when ir LED is off
 int sensorValueOn = 0;  // value read from the photo transistor when ir LED is on
+int sensorValue = 0; // difference sensorValueOn - sensorValueOff
+float filteredValue; // filtered sensor value
+
+// definitions for low pass filter
+#define FILTER_LEN 6
+float buffer[FILTER_LEN];
+int startBuf = 0;
+int lenBuf = 0;
 
 // command line
 #define MAX_CMD_LEN 80
@@ -47,8 +55,8 @@ char mode = 'D';
 char dataOutput = 'T';
 
 // trigger state and level
-int triggerLevelLow;
-int triggerLevelHigh;
+float triggerLevelLow;
+float triggerLevelHigh;
 boolean triggerState = false;
 
 // Address of trigger levels in EEPROM
@@ -87,8 +95,8 @@ void setTriggerLevels() {
  * Read trigger levels from EEPROM
  */
 void readTriggerLevels() {
-  triggerLevelLow = (int)eeprom_read_word(&triggerLevelLowAddr);
-  triggerLevelHigh = (int)eeprom_read_word(&triggerLevelHighAddr);
+  triggerLevelLow = (float)eeprom_read_word(&triggerLevelLowAddr);
+  triggerLevelHigh = (float)eeprom_read_word(&triggerLevelHighAddr);
   Serial.print("Trigger levels: ");
   Serial.print(triggerLevelLow);
   Serial.print(" ");
@@ -98,7 +106,7 @@ void readTriggerLevels() {
 /**
  * Detect and print a trigger event
  */
-void detectTrigger(int val) {
+void detectTrigger(float val) {
   boolean nextState = triggerState;
   if (val > triggerLevelHigh) {
     nextState = true;
@@ -163,6 +171,24 @@ void doCommand() {
   cmdComplete = false;
 }
 
+/* 
+ * Low pass filter to eleminate spikes
+ */
+float lowpass(int value) {
+  if (lenBuf < FILTER_LEN) {
+    lenBuf++;
+  }
+  buffer[startBuf++] = (float) value;
+  if (startBuf >= FILTER_LEN) {
+    startBuf = 0;
+  }
+  float sum = 0;
+  for (int i = 0; i < lenBuf; ++i) {
+    sum += buffer[i];
+  }
+  return sum / lenBuf;
+}
+
 /**
  * Setup.
  */
@@ -203,16 +229,20 @@ void loop() {
     digitalWrite(irOutPin, HIGH);
     delay(10);
     // read the analog in value:
-    sensorValueOn = analogRead(analogInPin);           
+    sensorValueOn = analogRead(analogInPin);
+    sensorValue = sensorValueOn - sensorValueOff;
+    filteredValue = lowpass(sensorValue);
     
     switch (dataOutput) {
       case 'R':
         // print the raw data to the serial monitor         
-        Serial.println(sensorValueOn - sensorValueOff);
+        Serial.print(sensorValue);
+        Serial.print(' ');
+        Serial.println(filteredValue, 3);
         break;
       case 'T':
         // detect and output trigger
-        detectTrigger(sensorValueOn - sensorValueOff);
+        detectTrigger(filteredValue);
         break;
     }
   }
