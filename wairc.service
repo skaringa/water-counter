@@ -1,0 +1,15 @@
+[Unit]
+Description=Water meter service
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/home/pi/water-counter
+ExecStart=/home/pi/water-counter/wairc.py
+User=pi
+Group=dialout
+
+[Install]
+WantedBy=multi-user.target
