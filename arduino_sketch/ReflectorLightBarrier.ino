@@ -33,10 +33,9 @@ int sensorValue = 0; // difference sensorValueOn - sensorValueOff
 float filteredValue; // filtered sensor value
 
 // definitions for low pass filter
-#define FILTER_LEN 6
-float buffer[FILTER_LEN];
-int startBuf = 0;
-int lenBuf = 0;
+float filterAlpha = 0.1f;
+float filterOut = 0;
+boolean filterLoad = true;
 
 // command line
 #define MAX_CMD_LEN 80
@@ -175,19 +174,14 @@ void doCommand() {
  * Low pass filter to eleminate spikes
  */
 float lowpass(int value) {
-  if (lenBuf < FILTER_LEN) {
-    lenBuf++;
+  if (filterLoad) {
+    filterOut = value;
+    filterLoad = false;
   }
-  buffer[startBuf++] = (float) value;
-  if (startBuf >= FILTER_LEN) {
-    startBuf = 0;
-  }
-  float sum = 0;
-  for (int i = 0; i < lenBuf; ++i) {
-    sum += buffer[i];
-  }
-  return sum / lenBuf;
+  filterOut = filterAlpha * value + (1.f - filterAlpha) * filterOut;
+  return filterOut;
 }
+
 
 /**
  * Setup.
