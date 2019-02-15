@@ -94,6 +94,9 @@ def main():
   if not ser.isOpen():
     print "Unable to open serial port %s" % port
     sys.exit(1)
+  # set trigger mode
+  ser.write(b'C\r\n')
+  ser.write(b'T\r\n')
 
   trigger_state = 0
   counter = last_rrd_count()
