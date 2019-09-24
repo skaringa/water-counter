@@ -73,14 +73,15 @@ def detect_pauses(data):
 def main():
   #counter = read_fetch_output()
   counter = read_rrd()
-  pauses = detect_pauses(counter)
-  if verbose:
-    for p in pauses:
-      print("Pause starting at {0:%Y-%m-%d %H:%M:%S}: {1:.1f} hours"
-        .format(datetime.fromtimestamp(p['start']), p['duration']/3600.0))
-  if len(pauses) == 0:
-    print("Possible leak detected! There is no break of at least {0} hours."
-      .format(min_pause/3600.0))
+  if len(counter) > 0:
+    pauses = detect_pauses(counter)
+    if verbose:
+      for p in pauses:
+        print("Pause starting at {0:%Y-%m-%d %H:%M:%S}: {1:.1f} hours"
+          .format(datetime.fromtimestamp(p['start']), p['duration']/3600.0))
+    if len(pauses) == 0:
+      print("Possible leak detected! There is no break of at least {0} hours."
+        .format(min_pause/3600.0))
 
 if __name__ == '__main__':
   main()
