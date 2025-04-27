@@ -17,7 +17,7 @@ def main():
   # Open serial line
   ser = serial.Serial(port, 9600)
   if not ser.isOpen():
-    print "Unable to open serial port %s" % port
+    print("Unable to open serial port %s" % port)
     sys.exit(1)
   # set data mode
   ser.write(b'C\r\n')

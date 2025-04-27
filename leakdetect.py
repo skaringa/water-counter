@@ -21,7 +21,7 @@ count_rrd = "{0}/water.rrd".format(os.path.dirname(os.path.abspath(__file__)))
 count_fetch = "{0}/water.fetch.txt".format(os.path.dirname(os.path.abspath(__file__)))
 
 # Length of the minimum duration without water consumption in seconds 
-min_pause = 3 * 60 * 60 # 3 hours
+min_pause = 2 * 60 * 60 # 2 hours
 
 # Verbose output
 verbose = False
@@ -34,7 +34,7 @@ def read_rrd():
   t = start
   for row in data:
     if row[0]:
-      result.append((t, row[0])) 
+      result.append((t, round(row[0], 3))) 
     t += step
   return result
 
@@ -62,6 +62,8 @@ def detect_pauses(data):
   data.append((time.time(), end_counter + 1)) # ensure that counter increments
   for (ts, counter) in data:
     if counter > start_counter:
+      if verbose:
+          print("counter increase:", datetime.fromtimestamp(ts), counter)
       duration = ts - start_time
       if duration >= min_pause:
         result.append({'start' : start_time, 'duration' : duration})

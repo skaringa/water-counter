@@ -43,7 +43,7 @@ count_rrd = "%s/water.rrd" % (os.path.dirname(os.path.abspath(__file__)))
 
 # Create the Round Robin Database
 def create_rrd():
-  print 'Creating RRD: ' + count_rrd
+  print('Creating RRD: ' + count_rrd)
   # Create RRD to store counter and consumption:
   # Counter is GAUGE (m^3)
   # Consumption is ABSOLUTE (m^3/s)
@@ -65,18 +65,13 @@ def create_rrd():
       'RRA:LAST:0.5:10080:520',
       'RRA:AVERAGE:0.5:10080:520')
   except Exception as e:
-    print 'Error ' + str(e)
+    print('Error ' + str(e))
 
 # Get the last counter value from the rrd database
 def last_rrd_count():
-  val = 0.0
-  handle = os.popen("rrdtool lastupdate " + count_rrd)
-  for line in handle:
-    m = re.match(r"^[0-9]*: ([0-9.]*) [0-9.]*", line)
-    if m:
-      val = float(m.group(1))
-      break
-  handle.close()
+  val = rrdtool.lastupdate(count_rrd)['ds']['counter']
+  if val is None:
+    val = 0.0
   return val
 
 # Main
@@ -92,7 +87,7 @@ def main():
   # Open serial line
   ser = serial.Serial(port, 9600)
   if not ser.isOpen():
-    print "Unable to open serial port %s" % port
+    print("Unable to open serial port %s" % port)
     sys.exit(1)
   # set trigger mode
   ser.write(b'C\r\n')
@@ -100,7 +95,7 @@ def main():
 
   trigger_state = 0
   counter = last_rrd_count()
-  print "restoring counter to %f" % counter
+  print("restoring counter to %f" % counter)
 
   while(1==1):
     # Read line from arduino and convert to trigger value
@@ -108,15 +103,15 @@ def main():
     line = line.strip()
 
     old_state = trigger_state
-    if line == '1':
+    if line == b'1':
       trigger_state = 1
-    elif line == '0':
+    elif line == b'0':
       trigger_state = 0
     if old_state == 1 and trigger_state == 0:
       # trigger active -> update count rrd
       counter += trigger_step
-      update = "N:%.3f:%.3f" % (counter, trigger_step)
-      #print update
+      update = "%d:%.3f:%.3f" % (int(time.time()), counter, trigger_step)
+      #print(update)
       rrdtool.update(count_rrd, update)
 
 if __name__ == '__main__':
